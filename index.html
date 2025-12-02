@@ -404,6 +404,7 @@
                     <button class="btn-repeat" onclick="repeatTest()">Repeat Test</button>
                     <button class="btn-reset" onclick="resetAndRepeat()">Reset and Repeat</button>
                     <button class="btn-devices" onclick="showLeaderboard()">Devices</button>
+                    <button class="btn-devices" onclick="addDevice()">Add my device</button>
                 </div>
             </div>
 
@@ -612,7 +613,7 @@
                 return ['Device database not loaded'];
             }
 
-            const tolerance = ballCount * 0.3;
+            const tolerance = ballCount * 0.1;
             const matches = deviceDatabase.filter(device => {
                 return Math.abs(device.balls - ballCount) <= tolerance;
             });
@@ -625,7 +626,7 @@
                 return ['No similar devices found in database'];
             }
 
-            return matches.slice(0, 5).map(device => device.name);
+            return matches.slice(0, 2).map(device => device.name);
         }
 
         function showLeaderboard() {
@@ -635,7 +636,7 @@
             const sortedDevices = [...deviceDatabase].sort((a, b) => b.balls - a.balls);
             const top10 = sortedDevices.slice(0, 10);
 
-            const tolerance = ballCount * 0.3;
+            const tolerance = userBallCount * 0.1;
             let leaderboardHtml = '';
 
             top10.forEach((device, index) => {
@@ -770,6 +771,41 @@
         });
 
         animate();
+
+        async function addDevice() {
+    const name = prompt("Enter device name (English letters only):");
+
+    if (!name) return;
+
+    if (!/^[A-Za-z0-9 _-]+$/.test(name)) {
+        alert("Only English letters, numbers, spaces, _ and - allowed!");
+        return;
+    }
+
+    const data = {
+        name: name,
+        balls: userBallCount
+    };
+
+    try {
+        const response = await fetch("https://device-db.markd-voznyuk.workers.dev/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            alert("Error: " + await response.text());
+            return;
+        }
+
+        alert("Device added successfully!");
+        await loadDeviceDatabase();
+        showLeaderboard();
+    } catch (e) {
+        alert("Failed to send data: " + e.message);
+    }
+}
     </script>
 </body>
 </html>
