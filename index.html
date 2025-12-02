@@ -116,6 +116,8 @@
             width: 90%;
             text-align: center;
             animation: modalSlide 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes modalSlide {
@@ -143,6 +145,26 @@
         .modal-stat {
             margin: 10px 0;
             font-size: 18px;
+        }
+
+        .device-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .device-info-title {
+            font-size: 20px;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .device-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 16px;
         }
 
         .button-container {
@@ -235,6 +257,7 @@
             <div class="title">FPL Test</div>
             <div class="fps-display" id="fpsDisplay">60 FPS</div>
             <div class="fps-minmax">
+                <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">60</span> FPS</div>
                 <div>↓ <span id="minFps">60</span> FPS</div>
             </div>
@@ -254,9 +277,14 @@
             <div class="modal-title">Test Complete!</div>
             <div class="modal-stats">
                 <div class="modal-stat">Total Balls: <strong id="totalBalls">0</strong></div>
+                <div class="modal-stat">Start FPS: <strong id="modalStartFps">60</strong></div>
                 <div class="modal-stat">Max FPS: <strong id="modalMaxFps">60</strong></div>
                 <div class="modal-stat">Min FPS: <strong id="modalMinFps">60</strong></div>
                 <div class="modal-stat">Average FPS: <strong id="avgFps">60</strong></div>
+            </div>
+            <div class="device-info" id="deviceInfo">
+                <div class="device-info-title">Info:</div>
+                <div id="deviceList">Analyzing...</div>
             </div>
             <div class="button-container">
                 <button class="btn-repeat" onclick="repeatTest()">Repeat Test</button>
@@ -273,6 +301,7 @@
 
         let balls = [];
         let fps = 60;
+        let startFps = null;
         let maxFps = 60;
         let minFps = 60;
         let lastTime = performance.now();
@@ -288,10 +317,32 @@
         let lastFpsUpdate = performance.now();
         let fpsBuffer = [];
         let lowFpsStartTime = null;
+        let startFpsCaptured = false;
+        let deviceDatabase = [];
+
+        async function loadDeviceDatabase() {
+            try {
+                const response = await fetch('https://mavox-id.github.io/FPL/device.json');
+                deviceDatabase = await response.json();
+            } catch (error) {
+                console.error('Failed to load device database:', error);
+                deviceDatabase = [];
+            }
+        }
+
+        loadDeviceDatabase();
 
         setTimeout(() => {
             measurementStarted = true;
         }, 2000);
+
+        setTimeout(() => {
+            if (!startFpsCaptured && balls.length === 0) {
+                startFps = fps;
+                startFpsCaptured = true;
+                document.getElementById('startFps').textContent = startFps;
+            }
+        }, 3000);
 
         class Ball {
             constructor(x, y) {
@@ -350,6 +401,12 @@
             }
             totalSpawned += count;
             updateBallCount();
+
+            if (!startFpsCaptured && balls.length > 0) {
+                startFps = fps;
+                startFpsCaptured = true;
+                document.getElementById('startFps').textContent = startFps;
+            }
         }
 
         function startHolding(x, y) {
@@ -425,6 +482,27 @@
             document.getElementById('ballCount').textContent = balls.length;
         }
 
+        function findSimilarDevices(ballCount) {
+            if (deviceDatabase.length === 0) {
+                return ['Device database not loaded'];
+            }
+
+            const tolerance = 500;
+            const matches = deviceDatabase.filter(device => {
+                return Math.abs(device.balls - ballCount) <= tolerance;
+            });
+
+            matches.sort((a, b) => {
+                return Math.abs(a.balls - ballCount) - Math.abs(b.balls - ballCount);
+            });
+
+            if (matches.length === 0) {
+                return ['No similar devices found in database'];
+            }
+
+            return matches.slice(0, 5).map(device => device.name);
+        }
+
         function animate() {
             if (testEnded) return;
 
@@ -482,9 +560,16 @@
             const avgFps = Math.round(fpsSum / frameCount);
             
             document.getElementById('totalBalls').textContent = balls.length;
+            document.getElementById('modalStartFps').textContent = startFps || '--';
             document.getElementById('modalMaxFps').textContent = maxFps;
             document.getElementById('modalMinFps').textContent = minFps;
             document.getElementById('avgFps').textContent = avgFps;
+
+            const similarDevices = findSimilarDevices(balls.length);
+            const deviceListHtml = similarDevices.map(device => 
+                `<div class="device-item">${device}</div>`
+            ).join('');
+            document.getElementById('deviceList').innerHTML = deviceListHtml;
             
             document.getElementById('modal').classList.add('active');
         }
