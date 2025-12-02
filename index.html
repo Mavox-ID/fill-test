@@ -448,7 +448,7 @@
 
         async function loadDeviceDatabase() {
     try {
-        const response = await fetch('https://device-db.markd-voznyuk.workers.dev/device', { cache: 'no-store' });
+        const response = await fetch('https://device-db.markd-voznyuk.workers.dev', { cache: 'no-store' });
         deviceDatabase = await response.json();
     } catch (error) {
         console.error('Failed to load device database:', error);
