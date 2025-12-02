@@ -446,17 +446,25 @@
         let deviceDatabase = [];
         let userBallCount = 0;
 
-        async function loadDeviceDatabase() {
+async function loadDeviceDatabase() {
     try {
-        const response = await fetch('https://device-db.markd-voznyuk.workers.dev/devices', { cache: 'no-store' });
+        const response = await fetch('https://device-db.markd-voznyuk.workers.dev/devices', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         deviceDatabase = await response.json();
+        console.log('Devices loaded:', deviceDatabase);
     } catch (error) {
         console.error('Failed to load device database:', error);
         deviceDatabase = [];
     }
-        }
+}
 
-        loadDeviceDatabase();
+loadDeviceDatabase();
 
         setTimeout(() => {
             measurementStarted = true;
