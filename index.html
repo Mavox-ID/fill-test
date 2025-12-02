@@ -3,456 +3,487 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Test</title>
+    <title>FPL Test - Frame Per Layer</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background-color: #1a1a2e;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             overflow: hidden;
+            height: 100vh;
+            user-select: none;
         }
 
-        #container {
-            position: relative;
-            width: 100%;
-            max-width: 1000px;
-            height: 100%;
-        }
-
-        #canvas-overlay {
-            position: absolute;
+        #canvas {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            cursor: crosshair;
+        }
+
+        .ui-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
             pointer-events: none;
         }
 
-        #info-box {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            pointer-events: auto;
-            z-index: 10;
-            border-left: 5px solid #00bcd4;
+        .stats-panel {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 250px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        #fps-chart {
-            width: 200px;
-            height: 50px;
-            border: 1px solid #00bcd4;
-            margin-bottom: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        #fps-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #00bcd4;
-            transition: height 0.1s;
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .fps-display {
-            font-size: 2.5em;
+            font-size: 48px;
             font-weight: bold;
-            color: #ffeb3b;
-            margin: 0;
-            line-height: 1;
+            margin: 10px 0;
+            color: #00ff88;
         }
 
-        .fps-min-max {
-            font-size: 0.8em;
-            margin-top: 5px;
-            color: #aaa;
+        .fps-minmax {
+            font-size: 14px;
+            opacity: 0.7;
+            margin: 5px 0;
         }
 
         .ball-count {
             margin-top: 15px;
-            font-size: 1.1em;
-            color: #f5f5f5;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
-        #stats-overlay {
-            position: absolute;
+
+        .ball-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .ball-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .modal {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.9);
             display: none;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            z-index: 20;
-            padding: 20px;
+            z-index: 100;
         }
 
-        #stats-content {
-            background-color: #2e2a40;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 30px rgba(0, 188, 212, 0.5);
-            max-width: 400px;
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
             width: 90%;
-        }
-
-        #stats-content h2 {
-            color: #00bcd4;
-            margin-top: 0;
-        }
-
-        #stats-content p {
-            font-size: 1.1em;
-            line-height: 1.6;
-        }
-
-        .button-group {
-            margin-top: 25px;
-        }
-
-        .test-button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        #repeat-button {
-            background-color: #4caf50;
-            color: white;
-        }
-
-        #repeat-button:hover {
-            background-color: #66bb6a;
-        }
-
-        #reset-repeat-button {
-            background-color: #f44336;
-            color: white;
-        }
-
-        #reset-repeat-button:hover {
-            background-color: #ef5350;
-        }
-
-        #start-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.5em;
-            color: rgba(255, 255, 255, 0.8);
             text-align: center;
-            z-index: 5;
-            pointer-events: none;
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #00ff88;
+        }
+
+        .modal-stats {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .modal-stat {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .btn-repeat {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #000;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff006e, #ff6b35);
+            color: white;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 107, 53, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            animation: hintPulse 0.5s ease;
+            z-index: 50;
+            display: none;
+        }
+
+        .hint.active {
+            display: block;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+
+        @media (max-width: 768px) {
+            .stats-panel {
+                min-width: 200px;
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 22px;
+            }
+
+            .fps-display {
+                font-size: 36px;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <canvas id="fpl-canvas"></canvas> 
-        
-        <div id="canvas-overlay">
-            <div id="info-box">
-                <h3>FPL Test</h3> 
-                
-                <div id="fps-chart">
-                    <div id="fps-bar"></div>
-                </div>
-
-                <p class="fps-display" id="current-fps">0</p>
-                
-                <div class="fps-min-max">
-                    <span id="max-fps">↑ 0 FPS</span>
-                    <span id="min-fps">↓ 0 FPS</span>
-                </div>
-                
-                <hr style="border-color: #333; margin: 10px 0;">
-
-                <p class="ball-count">White Balls: <span id="ball-count-white">0</span></p>
-                <p class="ball-count">Rate: <span id="spawn-rate">0/0.5s</span></p>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui-container">
+        <div class="stats-panel">
+            <div class="title">FPL Test</div>
+            <div class="fps-display" id="fpsDisplay">60 FPS</div>
+            <div class="fps-minmax">
+                <div>↑ <span id="maxFps">60</span> FPS</div>
+                <div>↓ <span id="minFps">60</span> FPS</div>
             </div>
-
-            <div id="start-message">
-                Click and hold anywhere outside the top-left box to start and add balls.
-            </div>
-            
-            <div id="stats-overlay">
-                <div id="stats-content">
-                    <h2>Test Results</h2>
-                    <p id="stat-total-balls">Total Balls: 0</p>
-                    <p id="stat-min-fps">Minimum FPS Reached: 0</p>
-                    <p id="stat-duration">Duration: 0s</p>
-                    <p id="stat-max-rate">Max Spawn Rate: 0</p>
-                    <div class="button-group">
-                        <button class="test-button" id="repeat-button">Repeat Test</button>
-                        <button class="test-button" id="reset-repeat-button">Reset and Repeat</button>
-                    </div>
+            <div class="ball-count">
+                <div class="ball-item">
+                    <div class="ball-icon" style="background: white;"></div>
+                    <span>White: <span id="ballCount">0</span></span>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="hint" id="hint"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-title">Test Complete!</div>
+            <div class="modal-stats">
+                <div class="modal-stat">Total Balls: <strong id="totalBalls">0</strong></div>
+                <div class="modal-stat">Max FPS: <strong id="modalMaxFps">60</strong></div>
+                <div class="modal-stat">Min FPS: <strong id="modalMinFps">60</strong></div>
+                <div class="modal-stat">Average FPS: <strong id="avgFps">60</strong></div>
+            </div>
+            <div class="button-container">
+                <button class="btn-repeat" onclick="repeatTest()">Repeat Test</button>
+                <button class="btn-reset" onclick="resetAndRepeat()">Reset and Repeat</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const canvas = document.getElementById('fpl-canvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const infoBox = document.getElementById('info-box');
-        const startMessage = document.getElementById('start-message');
-        const statsOverlay = document.getElementById('stats-overlay');
-        const fpsDisplay = document.getElementById('current-fps');
-        const maxFpsDisplay = document.getElementById('max-fps');
-        const minFpsDisplay = document.getElementById('min-fps');
-        const ballCountDisplay = document.getElementById('ball-count-white');
-        const rateDisplay = document.getElementById('spawn-rate');
-        const fpsBar = document.getElementById('fps-bar');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        let particles = [];
-        let isTestRunning = false;
-        let isMouseDown = false;
-        let lastFrameTime = performance.now();
-        let fps = 0;
-        let maxFPS = 0;
-        let minFPS = Infinity;
+        let balls = [];
+        let fps = 60;
+        let maxFps = 60;
+        let minFps = 60;
+        let lastTime = performance.now();
         let frameCount = 0;
-        let lastFPSUpdateTime = performance.now();
-        let testStartTime = 0;
+        let fpsSum = 0;
+        let isHolding = false;
+        let holdTimer = null;
+        let spawnRate = 200;
+        let totalSpawned = 0;
+        let clickCount = 0;
+        let testEnded = false;
 
-        let spawnIntervalId = null;
-        let currentSpawnRate = 100; // 100 particles per 0.5s
-        let lastSpawnX = 0;
-        let lastSpawnY = 0;
-
-        class Particle {
-            constructor(x, y, color) {
+        class Ball {
+            constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 5; 
-                this.vy = (Math.random() - 0.5) * 5;
-                this.radius = 5;
-                this.color = color;
-            }
-
-            draw() {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-                
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                
-                ctx.shadowBlur = 0; 
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.radius = 5 + Math.random() * 5;
+                this.alpha = 1;
+                this.trail = [];
             }
 
             update() {
+                this.trail.push({x: this.x, y: this.y, alpha: this.alpha});
+                if (this.trail.length > 10) this.trail.shift();
+
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.99; 
-                this.vy *= 0.99; 
-            }
-        }
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function checkClickOutsideInfo(clientX, clientY) {
-            const rect = infoBox.getBoundingClientRect();
-            return !(clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom);
-        }
-
-        function startSpawning(clientX, clientY) {
-            if (!checkClickOutsideInfo(clientX, clientY)) return;
-
-            isMouseDown = true;
-            lastSpawnX = clientX;
-            lastSpawnY = clientY;
-
-            if (!isTestRunning) {
-                isTestRunning = true;
-                startMessage.style.display = 'none';
-                testStartTime = performance.now();
-            }
-
-            const spawnFunction = () => {
-                // Update spawn rate based on ball count
-                const bonusRate = Math.floor(particles.length / 1000) * 100;
-                currentSpawnRate = 100 + bonusRate;
-                rateDisplay.textContent = `${currentSpawnRate}/0.5s`;
-
-                for (let i = 0; i < currentSpawnRate; i++) {
-                    particles.push(new Particle(lastSpawnX, lastSpawnY, 'white'));
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx *= -0.95;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
                 }
-            };
-            
-            // Clear any existing interval to prevent duplicates
-            if (spawnIntervalId) clearInterval(spawnIntervalId);
-            
-            spawnFunction(); // Spawn immediately
-            spawnIntervalId = setInterval(spawnFunction, 500); // Repeat every 500ms (0.5s)
-        }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy *= -0.95;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                }
 
-        function stopSpawning() {
-            isMouseDown = false;
-            if (spawnIntervalId) {
-                clearInterval(spawnIntervalId);
-                spawnIntervalId = null;
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+
+            draw() {
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const trailAlpha = (i / this.trail.length) * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, this.radius * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${trailAlpha})`;
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                ctx.fill();
+                ctx.shadowBlur = 0;
             }
         }
 
-        function handleMove(clientX, clientY) {
-            if (isMouseDown) {
-                lastSpawnX = clientX;
-                lastSpawnY = clientY;
+        function spawnBalls(count, x, y) {
+            for (let i = 0; i < count; i++) {
+                balls.push(new Ball(x, y));
+            }
+            totalSpawned += count;
+            updateBallCount();
+        }
+
+        function startHolding(x, y) {
+            if (testEnded) return;
+            isHolding = true;
+            
+            const spawnInterval = setInterval(() => {
+                if (!isHolding) {
+                    clearInterval(spawnInterval);
+                    return;
+                }
+                
+                const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
+                const batchSize = Math.floor(currentRate / 2);
+                spawnBalls(batchSize, x, y);
+            }, 500);
+            
+            holdTimer = spawnInterval;
+        }
+
+        function stopHolding() {
+            isHolding = false;
+            if (holdTimer) {
+                clearInterval(holdTimer);
+                holdTimer = null;
             }
         }
-        
+
         canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 0 || e.button === 2) { 
-                startSpawning(e.clientX, e.clientY);
+            if (e.button === 2) {
+                startHolding(e.clientX, e.clientY);
             }
         });
-        canvas.addEventListener('mouseup', stopSpawning);
-        canvas.addEventListener('mouseout', stopSpawning);
-        canvas.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        canvas.addEventListener('mouseup', () => {
+            stopHolding();
+        });
 
         canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault(); 
+            e.preventDefault();
             const touch = e.touches[0];
-            startSpawning(touch.clientX, touch.clientY);
+            startHolding(touch.clientX, touch.clientY);
         });
-        canvas.addEventListener('touchend', stopSpawning);
-        canvas.addEventListener('touchcancel', stopSpawning);
-        canvas.addEventListener('touchmove', (e) => {
-             if (e.touches.length > 0) {
-                handleMove(e.touches[0].clientX, e.touches[0].clientY);
-             }
+
+        canvas.addEventListener('touchend', () => {
+            stopHolding();
         });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('click', () => {
+            if (testEnded) return;
+            clickCount++;
+            if (clickCount >= 3) {
+                showHint();
+                clickCount = 0;
+            }
+        });
+
+        function showHint() {
+            const hint = document.getElementById('hint');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            hint.textContent = isMobile ? 'Hold down on the free area' : 'Hold down RMB (Right Mouse Button)';
+            hint.classList.add('active');
+            setTimeout(() => {
+                hint.classList.remove('active');
+            }, 3000);
+        }
+
+        function updateBallCount() {
+            document.getElementById('ballCount').textContent = balls.length;
+        }
 
         function animate() {
-            const now = performance.now();
-            const deltaTime = now - lastFrameTime;
+            if (testEnded) return;
 
-            if (isTestRunning) {
-                frameCount++;
-                if (now > lastFPSUpdateTime + 1000) {
-                    fps = frameCount * 1000 / (now - lastFPSUpdateTime);
-                    
-                    const currentFPS = Math.round(fps);
-                    
-                    fpsDisplay.textContent = currentFPS;
-                    
-                    maxFPS = Math.max(maxFPS, currentFPS);
-                    if (currentFPS > 0) { 
-                        minFPS = Math.min(minFPS, currentFPS);
-                    } else if (particles.length > 100) {
-                        minFPS = 0;
-                    }
+            const currentTime = performance.now();
+            const delta = currentTime - lastTime;
+            fps = Math.round(1000 / delta);
+            lastTime = currentTime;
 
-                    maxFpsDisplay.textContent = `↑ ${maxFPS} FPS`;
-                    minFpsDisplay.textContent = `↓ ${minFPS === Infinity ? 0 : minFPS} FPS`;
+            if (fps < minFps) minFps = fps;
+            if (fps > maxFps) maxFps = fps;
+            
+            frameCount++;
+            fpsSum += fps;
 
-                    fpsBar.style.height = `${Math.min(100, (currentFPS / 60) * 100)}%`;
-                    
-                    frameCount = 0;
-                    lastFPSUpdateTime = now;
+            document.getElementById('fpsDisplay').textContent = fps + ' FPS';
+            document.getElementById('maxFps').textContent = maxFps;
+            document.getElementById('minFps').textContent = minFps;
 
-                    if (currentFPS <= 0 && particles.length > 100) { 
-                        stopTest();
-                        return;
-                    }
-                }
-            }
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            particles.forEach(p => {
-                p.update();
-                p.draw();
+            balls.forEach(ball => {
+                ball.update();
+                ball.draw();
             });
 
-            ballCountDisplay.textContent = particles.length;
+            if (fps <= 0 || (fps < 5 && balls.length > 100)) {
+                endTest();
+                return;
+            }
 
-            lastFrameTime = now;
             requestAnimationFrame(animate);
         }
 
-        function stopTest() {
-            isTestRunning = false;
-            stopSpawning();
-            const durationSeconds = ((performance.now() - testStartTime) / 1000).toFixed(2);
+        function endTest() {
+            testEnded = true;
+            stopHolding();
+            const avgFps = Math.round(fpsSum / frameCount);
             
-            document.getElementById('stat-total-balls').textContent = `Total Balls: ${particles.length}`;
-            document.getElementById('stat-min-fps').textContent = `Minimum FPS Reached: ${minFPS === Infinity ? 0 : minFPS} FPS`;
-            document.getElementById('stat-duration').textContent = `Duration: ${durationSeconds}s`;
-            document.getElementById('stat-max-rate').textContent = `Max Spawn Rate: ${currentSpawnRate}/0.5s`;
+            document.getElementById('totalBalls').textContent = balls.length;
+            document.getElementById('modalMaxFps').textContent = maxFps;
+            document.getElementById('modalMinFps').textContent = minFps;
+            document.getElementById('avgFps').textContent = avgFps;
             
-            statsOverlay.style.display = 'flex';
-        }
-
-        function resetStats() {
-            particles = [];
-            isTestRunning = false;
-            isMouseDown = false;
-            stopSpawning();
-            fps = 0;
-            maxFPS = 0;
-            minFPS = Infinity;
-            frameCount = 0;
-            lastFrameTime = performance.now();
-            lastFPSUpdateTime = performance.now();
-            testStartTime = 0;
-            currentSpawnRate = 100;
-
-            fpsDisplay.textContent = 0;
-            maxFpsDisplay.textContent = '↑ 0 FPS';
-            minFpsDisplay.textContent = '↓ 0 FPS';
-            ballCountDisplay.textContent = 0;
-            rateDisplay.textContent = `0/0.5s`;
-            fpsBar.style.height = '0%';
+            document.getElementById('modal').classList.add('active');
         }
 
         function repeatTest() {
-            statsOverlay.style.display = 'none';
-            particles = [];
-            isTestRunning = false; // Reset to allow first click to start a new test
-            testStartTime = 0;
-            currentSpawnRate = 100;
-            rateDisplay.textContent = `100/0.5s`;
-            startMessage.style.display = 'block'; 
+            document.getElementById('modal').classList.remove('active');
+            balls = [];
+            testEnded = false;
+            totalSpawned = 0;
+            clickCount = 0;
+            updateBallCount();
+            lastTime = performance.now();
             animate();
         }
 
-        function resetAndRepeatTest() {
-            window.location.reload(); 
+        function resetAndRepeat() {
+            location.reload();
         }
 
-        document.getElementById('repeat-button').addEventListener('click', repeatTest);
-        document.getElementById('reset-repeat-button').addEventListener('click', resetAndRepeatTest);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
 
-        resetStats();
         animate();
     </script>
 </body>
