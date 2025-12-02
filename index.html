@@ -284,6 +284,14 @@
         let totalSpawned = 0;
         let clickCount = 0;
         let testEnded = false;
+        let measurementStarted = false;
+        let lastFpsUpdate = performance.now();
+        let fpsBuffer = [];
+        let lowFpsStartTime = null;
+
+        setTimeout(() => {
+            measurementStarted = true;
+        }, 2000);
 
         class Ball {
             constructor(x, y) {
@@ -371,7 +379,7 @@
         }
 
         canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 2) {
+            if (e.button === 0) {
                 startHolding(e.clientX, e.clientY);
             }
         });
@@ -406,7 +414,7 @@
         function showHint() {
             const hint = document.getElementById('hint');
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            hint.textContent = isMobile ? 'Hold down on the free area' : 'Hold down RMB (Right Mouse Button)';
+            hint.textContent = isMobile ? 'Hold down on the free area' : 'Hold down LMB (Left Mouse Button)';
             hint.classList.add('active');
             setTimeout(() => {
                 hint.classList.remove('active');
@@ -422,18 +430,40 @@
 
             const currentTime = performance.now();
             const delta = currentTime - lastTime;
-            fps = Math.round(1000 / delta);
+            const currentFps = Math.round(1000 / delta);
             lastTime = currentTime;
 
-            if (fps < minFps) minFps = fps;
-            if (fps > maxFps) maxFps = fps;
-            
-            frameCount++;
-            fpsSum += fps;
+            fpsBuffer.push(currentFps);
 
-            document.getElementById('fpsDisplay').textContent = fps + ' FPS';
-            document.getElementById('maxFps').textContent = maxFps;
-            document.getElementById('minFps').textContent = minFps;
+            if (currentTime - lastFpsUpdate >= 500) {
+                const avgCurrentFps = Math.round(fpsBuffer.reduce((a, b) => a + b, 0) / fpsBuffer.length);
+                fps = avgCurrentFps;
+                fpsBuffer = [];
+                lastFpsUpdate = currentTime;
+
+                if (measurementStarted) {
+                    if (fps < minFps) minFps = fps;
+                    if (fps > maxFps) maxFps = fps;
+                    
+                    frameCount++;
+                    fpsSum += fps;
+
+                    document.getElementById('fpsDisplay').textContent = fps + ' FPS';
+                    document.getElementById('maxFps').textContent = maxFps;
+                    document.getElementById('minFps').textContent = minFps;
+
+                    if (fps <= 1) {
+                        if (lowFpsStartTime === null) {
+                            lowFpsStartTime = currentTime;
+                        } else if (currentTime - lowFpsStartTime >= 5000) {
+                            endTest();
+                            return;
+                        }
+                    } else {
+                        lowFpsStartTime = null;
+                    }
+                }
+            }
 
             ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -442,11 +472,6 @@
                 ball.update();
                 ball.draw();
             });
-
-            if (fps <= 0 || (fps < 5 && balls.length > 100)) {
-                endTest();
-                return;
-            }
 
             requestAnimationFrame(animate);
         }
@@ -470,8 +495,11 @@
             testEnded = false;
             totalSpawned = 0;
             clickCount = 0;
+            lowFpsStartTime = null;
             updateBallCount();
             lastTime = performance.now();
+            lastFpsUpdate = performance.now();
+            fpsBuffer = [];
             animate();
         }
 
