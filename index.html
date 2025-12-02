@@ -391,10 +391,10 @@
                 <div class="modal-title">Test Complete!</div>
                 <div class="modal-stats">
                     <div class="modal-stat">Total Balls: <strong id="totalBalls">0</strong></div>
-                    <div class="modal-stat">Start FPS: <strong id="modalStartFps">60</strong></div>
-                    <div class="modal-stat">Max FPS: <strong id="modalMaxFps">60</strong></div>
-                    <div class="modal-stat">Min FPS: <strong id="modalMinFps">60</strong></div>
-                    <div class="modal-stat">Average FPS: <strong id="avgFps">60</strong></div>
+                    <div class="modal-stat">Start FPS: <strong id="modalStartFps">--</strong></div>
+                    <div class="modal-stat">Max FPS: <strong id="modalMaxFps">--</strong></div>
+                    <div class="modal-stat">Min FPS: <strong id="modalMinFps">--</strong></div>
+                    <div class="modal-stat">Average FPS: <strong id="avgFps">--</strong></div>
                 </div>
                 <div class="device-info" id="deviceInfo">
                     <div class="device-info-title">Info:</div>
@@ -635,7 +635,7 @@
             const sortedDevices = [...deviceDatabase].sort((a, b) => b.balls - a.balls);
             const top10 = sortedDevices.slice(0, 10);
 
-            const tolerance = 500;
+            const tolerance = 5000;
             let leaderboardHtml = '';
 
             top10.forEach((device, index) => {
@@ -659,7 +659,7 @@
                             ${rankDisplay}
                             <div class="leaderboard-name">${device.name}</div>
                         </div>
-                        <div class="leaderboard-balls">${device.balls} balls</div>
+                        <div class="leaderboard-balls">${device.balls} objects</div>
                     </div>
                 `;
             });
