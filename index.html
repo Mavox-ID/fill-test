@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPL Test</title>
+    <style>
+        /* CSS Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #1a1a2e; /* Dark background */
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 100%;
+        }
+
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to go through to the main canvas area */
+        }
+
+        #info-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            pointer-events: auto; /* Box should be clickable */
+            z-index: 10;
+            border-left: 5px solid #00bcd4;
+        }
+
+        #fps-chart {
+            width: 200px;
+            height: 50px;
+            border: 1px solid #00bcd4;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #fps-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #00bcd4;
+            transition: height 0.1s;
+        }
+
+        .fps-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffeb3b; /* Yellow for high visibility */
+            margin: 0;
+            line-height: 1;
+        }
+
+        .fps-min-max {
+            font-size: 0.8em;
+            margin-top: 5px;
+            color: #aaa;
+        }
+
+        .ball-count {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #f5f5f5;
+        }
+        
+        #stats-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 20;
+            padding: 20px;
+        }
+
+        #stats-content {
+            background-color: #2e2a40;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 188, 212, 0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        #stats-content h2 {
+            color: #00bcd4;
+            margin-top: 0;
+        }
+
+        #stats-content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            margin-top: 25px;
+        }
+
+        .test-button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #repeat-button {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        #repeat-button:hover {
+            background-color: #66bb6a;
+        }
+
+        #reset-repeat-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #reset-repeat-button:hover {
+            background-color: #ef5350;
+        }
+
+        #start-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="fpl-canvas"></canvas> 
+        
+        <div id="canvas-overlay">
+            <div id="info-box">
+                <h3>FPL Test</h3> 
+                
+                <div id="fps-chart">
+                    <div id="fps-bar"></div>
+                </div>
+
+                <p class="fps-display" id="current-fps">0</p>
+                
+                <div class="fps-min-max">
+                    <span id="max-fps">↑ 0 FPS</span>
+                    <span id="min-fps">↓ 0 FPS</span>
+                </div>
+                
+                <hr style="border-color: #333; margin: 10px 0;">
+
+                <p class="ball-count">White Balls: <span id="ball-count-white">0</span></p>
+            </div>
+
+            <div id="start-message">
+                Click or tap anywhere outside the top-left box to start and add balls.
+            </div>
+            
+            <div id="stats-overlay">
+                <div id="stats-content">
+                    <h2>Test Results</h2>
+                    <p id="stat-total-balls">Total Balls: 0</p>
+                    <p id="stat-min-fps">Minimum FPS Reached: 0</p>
+                    <p id="stat-duration">Duration: 0s</p>
+                    <div class="button-group">
+                        <button class="test-button" id="repeat-button">Repeat Test</button>
+                        <button class="test-button" id="reset-repeat-button">Reset and Repeat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript Logic
+        const canvas = document.getElementById('fpl-canvas');
+        const ctx = canvas.getContext('2d');
+        const infoBox = document.getElementById('info-box');
+        const startMessage = document.getElementById('start-message');
+        const statsOverlay = document.getElementById('stats-overlay');
+        const fpsDisplay = document.getElementById('current-fps');
+        const maxFpsDisplay = document.getElementById('max-fps');
+        const minFpsDisplay = document.getElementById('min-fps');
+        const ballCountDisplay = document.getElementById('ball-count-white');
+        const fpsBar = document.getElementById('fps-bar');
+
+        let particles = [];
+        let isTestRunning = false;
+        let lastFrameTime = performance.now();
+        let fps = 0;
+        let maxFPS = 0;
+        let minFPS = Infinity;
+        let frameCount = 0;
+        let lastFPSUpdateTime = performance.now();
+        let testStartTime = 0;
+
+        // Particle Class
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                // Random velocity for the 'flying' effect
+                this.vx = (Math.random() - 0.5) * 5; 
+                this.vy = (Math.random() - 0.5) * 5;
+                this.radius = 5;
+                this.color = color;
+                this.lifespan = 300; // frames
+                this.age = 0;
+            }
+
+            draw() {
+                // Glow/light effect
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                
+                // Opacity fades out as the particle gets older
+                ctx.globalAlpha = 1 - (this.age / this.lifespan);
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // Reset for other drawings
+                ctx.shadowBlur = 0; 
+                ctx.globalAlpha = 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                // Simple friction
+                this.vx *= 0.99; 
+                this.vy *= 0.99; 
+                this.age++;
+            }
+        }
+
+        // --- Core Functions ---
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function addBalls(clientX, clientY, count = 10) {
+            // Check if click is outside the info box
+            const rect = infoBox.getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                return; // Ignore clicks on the info box
+            }
+            
+            // Start the test on the first interaction
+            if (!isTestRunning) {
+                isTestRunning = true;
+                startMessage.style.display = 'none';
+                testStartTime = performance.now();
+            }
+
+            // Create a burst of white particles (balls)
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(clientX, clientY, 'white'));
+            }
+        }
+
+        // Add balls on mouse click (left or right) or touch
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0 || e.button === 2) { // Left or Right click
+                addBalls(e.clientX, e.clientY, 15);
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            // Prevent default zooming/scrolling on mobile
+            e.preventDefault(); 
+            const touch = e.touches[0];
+            addBalls(touch.clientX, touch.clientY, 15);
+        });
+
+        // Prevent context menu on right-click
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+
+        // Main animation loop
+        function animate() {
+            const now = performance.now();
+            const deltaTime = now - lastFrameTime;
+
+            // 1. FPS Calculation
+            if (isTestRunning) {
+                frameCount++;
+                if (now > lastFPSUpdateTime + 1000) {
+                    fps = frameCount * 1000 / (now - lastFPSUpdateTime);
+                    
+                    // Round to 2 decimal places
+                    const currentFPS = Math.round(fps);
+                    
+                    // Update HUD
+                    fpsDisplay.textContent = currentFPS;
+                    
+                    // Update Min/Max FPS
+                    maxFPS = Math.max(maxFPS, currentFPS);
+                    // Only update minFPS if it's less than the current value (and not Infinity from the start)
+                    if (currentFPS > 0) { 
+                        minFPS = Math.min(minFPS, currentFPS);
+                    } else {
+                        // Special handling for 0 FPS to stop the test immediately
+                        minFPS = 0;
+                    }
+
+
+                    maxFpsDisplay.textContent = `↑ ${maxFPS} FPS`;
+                    minFpsDisplay.textContent = `↓ ${minFPS === Infinity ? 0 : minFPS} FPS`;
+
+                    // Update FPS Bar (Example: 60 FPS is 100% height)
+                    fpsBar.style.height = `${Math.min(100, (currentFPS / 60) * 100)}%`;
+                    
+                    // Reset counter
+                    frameCount = 0;
+                    lastFPSUpdateTime = now;
+
+                    // Stop condition: FPS reaches 0
+                    if (currentFPS <= 0 && particles.length > 50) { 
+                        // Added particle check to avoid stopping on startup
+                        stopTest();
+                        return;
+                    }
+                }
+            }
+
+            // 2. Rendering
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Filter out old/dead particles and update remaining ones
+            particles = particles.filter(p => p.age < p.lifespan);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // 3. Update HUD Data
+            ballCountDisplay.textContent = particles.length;
+
+            lastFrameTime = now;
+            requestAnimationFrame(animate);
+        }
+
+        function stopTest() {
+            isTestRunning = false;
+            const durationSeconds = ((performance.now() - testStartTime) / 1000).toFixed(2);
+            
+            // Populate statistics overlay
+            document.getElementById('stat-total-balls').textContent = `Total Balls: ${particles.length}`;
+            document.getElementById('stat-min-fps').textContent = `Minimum FPS Reached: ${minFPS} FPS`;
+            document.getElementById('stat-duration').textContent = `Duration: ${durationSeconds}s`;
+            
+            // Display the overlay
+            statsOverlay.style.display = 'flex';
+        }
+
+        function resetStats() {
+            particles = [];
+            isTestRunning = false;
+            fps = 0;
+            maxFPS = 0;
+            minFPS = Infinity;
+            frameCount = 0;
+            lastFrameTime = performance.now();
+            lastFPSUpdateTime = performance.now();
+            testStartTime = 0;
+
+            // Reset HUD
+            fpsDisplay.textContent = 0;
+            maxFpsDisplay.textContent = '↑ 0 FPS';
+            minFpsDisplay.textContent = '↓ 0 FPS';
+            ballCountDisplay.textContent = 0;
+            fpsBar.style.height = '0%';
+        }
+
+        function repeatTest() {
+            statsOverlay.style.display = 'none';
+            particles = [];
+            isTestRunning = true;
+            testStartTime = performance.now();
+            // Start message disappears on first interaction anyway, but hide it here for safety
+            startMessage.style.display = 'none'; 
+            animate();
+        }
+
+        function resetAndRepeatTest() {
+            // Reset all stats to zero and reload the page
+            window.location.reload(); 
+        }
+
+        // --- Button Handlers ---
+        document.getElementById('repeat-button').addEventListener('click', repeatTest);
+        document.getElementById('reset-repeat-button').addEventListener('click', resetAndRepeatTest);
+
+        // Initial setup and start animation
+        resetStats();
+        animate();
+    </script>
+</body>
+  </html>
