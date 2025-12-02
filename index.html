@@ -283,7 +283,7 @@
                 <div class="modal-stat">Average FPS: <strong id="avgFps">60</strong></div>
             </div>
             <div class="device-info" id="deviceInfo">
-                <div class="device-info-title">Info:</div>
+                <div class="device-info-title">Similar device:</div>
                 <div id="deviceList">Analyzing...</div>
             </div>
             <div class="button-container">
@@ -334,7 +334,7 @@
 
         setTimeout(() => {
             measurementStarted = true;
-        }, 2000);
+        }, 500);
 
         setTimeout(() => {
             if (!startFpsCaptured && balls.length === 0) {
