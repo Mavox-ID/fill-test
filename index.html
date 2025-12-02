@@ -612,7 +612,7 @@
                 return ['Device database not loaded'];
             }
 
-            const tolerance = 500;
+            const tolerance = ballCount * 0.3;
             const matches = deviceDatabase.filter(device => {
                 return Math.abs(device.balls - ballCount) <= tolerance;
             });
@@ -635,7 +635,7 @@
             const sortedDevices = [...deviceDatabase].sort((a, b) => b.balls - a.balls);
             const top10 = sortedDevices.slice(0, 10);
 
-            const tolerance = 5000;
+            const tolerance = ballCount * 0.3;
             let leaderboardHtml = '';
 
             top10.forEach((device, index) => {
