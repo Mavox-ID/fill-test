@@ -138,8 +138,11 @@
         }
 
         .modal-stats {
-            margin: 20px 0;
-            text-align: left;
+            margin: 20px auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .modal-stat {
@@ -426,7 +429,7 @@
                 <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">--</span> FPS</div>
                 <div>↓ <span id="minFps">--</span> FPS</div>
-                <div>Created by: <strong>Sliz®</strong> | V48.0</div>
+                <div>Created by: <strong>Sliz®</strong> | V48.1</div>
             </div>
             <div class="ball-count">
                 <div class="ball-item">
@@ -442,7 +445,7 @@
         <h2>Welcome!</h2>
         <p>To see the statistics, please <strong>hold your finger or LMB on the blue area</strong> until the results appear.</p>
         <p>Created by: <strong>Sliz®</strong> We are not responsible for your device. <strong>(But the test is safe.)</strong></p>
-        <p>Latest version of the project: <strong>48.0</strong></p>
+        <p>Latest version of the project: <strong>48.1</strong></p>
         <button id="fineButton">Fine</button>
     </div>
 </div>
@@ -538,6 +541,7 @@
         let lastTrigger = 0;
         let currentX = 0;
         let currentY = 0;
+        let previousScreen = null;
 
         console.log('%c[FPL] Attention! You are in the DevTools console; this is for developers only. If you are a beta tester or have found a bug, you can view the logs and request help on the official Github page.', 'color: darkgreen; font-weight: bold;');
 
@@ -572,7 +576,7 @@
     }
 
     console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkgreen; font-weight: bold;');
-    console.log('%c[POLICE] Version of code: 48.0', 'color: darkblue; font-weight: bold;');
+    console.log('%c[POLICE] Version of code: 48.1', 'color: darkblue; font-weight: bold;');
     console.groupEnd();
 })();
 
@@ -820,6 +824,8 @@ window.addEventListener('load', () => {
             document.getElementById('statsView').classList.add('hidden');
             document.getElementById('leaderboardView').classList.add('active');
 
+            previousScreen = 'leaderboard';
+
             const sortedDevices = [...deviceDatabase].sort((a, b) => b.balls - a.balls);
             const top10 = sortedDevices.slice(0, 10);
 
@@ -861,6 +867,7 @@ window.addEventListener('load', () => {
         }
 
         function showAllDevices() {
+    previousScreen = 'leaderboard';
     document.getElementById('leaderboardView').classList.remove('active');
     document.getElementById('allDevicesView').style.display = 'block';
 
@@ -889,6 +896,8 @@ function hideAllDevices() {
 
 function showAllSimilarDevices() {
     if (!userBallCount || deviceDatabase.length === 0) return;
+
+    previousScreen = 'allDevices';
 
     const tolerance = userBallCount * 0.1;
     const similarDevices = deviceDatabase
@@ -921,8 +930,15 @@ function showAllSimilarDevices() {
 function hideSimilarDevices() {
     document.getElementById('similarDevicesModal').style.display = 'none';
 
-    document.getElementById('allDevicesView').style.display = 'none';
-    document.getElementById('leaderboardView').classList.remove('active');
+    if (previousScreen === 'allDevices') {
+        document.getElementById('allDevicesView').style.display = 'block';
+        return;
+    }
+
+    if (previousScreen === 'leaderboard') {
+        document.getElementById('leaderboardView').classList.add('active');
+        return;
+    }
 
     document.getElementById('statsView').classList.remove('hidden');
 }
