@@ -537,7 +537,7 @@ async function loadDeviceDatabase() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         deviceDatabase = await response.json();
-        console.log('Devices loaded:', deviceDatabase);
+        console.log('Devices loaded, Info: Network');
 
         updateDeviceList();
 
