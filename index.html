@@ -426,12 +426,12 @@
                 <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">--</span> FPS</div>
                 <div>↓ <span id="minFps">--</span> FPS</div>
+                <div>Created by: <strong>Sliz®</strong></div>
             </div>
             <div class="ball-count">
                 <div class="ball-item">
                     <div class="ball-icon" style="background: white;"></div>
                     <span>White: <span id="ballCount">0</span></span>
-                    <p>Created by: <strong>Sliz®</strong></p>
                 </div>
             </div>
         </div>
@@ -912,13 +912,18 @@ function hideAllDevices() {
 
         animate();
 
-        async function addDevice() {
+async function addDevice() {
     const name = prompt("Enter device name (English letters only):");
-
     if (!name) return;
 
     if (!/^[A-Za-z0-9 _-]+$/.test(name)) {
         alert("Only English letters, numbers, spaces, _ and - allowed!");
+        return;
+    }
+
+    const exists = deviceDatabase.some(device => device.name.toLowerCase() === name.toLowerCase());
+    if (exists) {
+        alert("This device name already exists in the database!");
         return;
     }
 
