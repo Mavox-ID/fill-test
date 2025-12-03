@@ -525,24 +525,63 @@
         let isMouseDown = false;
         let lastSpawn = 0;
         let lastTrigger = 0;
+        let currentX = 0;
+        let currentY = 0;
+
+        console.log('%c[FPL] Attention! You are in the DevTools console; this is for developers only. If you are a beta tester or have found a bug, you can view the logs and request help on the official Github page.', 'color: darkgreen; font-weight: bold;');
+
+(async function policeCheck() {
+    console.group('%c[POLICE] Running system checks', 'color: darkblue; font-weight: bold;');
+
+    if (location.protocol !== 'https:') {
+        console.error('%c[ERROR] Connection is not HTTPS!', 'color: red; font-weight: bold;');
+        return;
+    } 
+    console.log('%c[OK] HTTPS verified', 'color: green; font-weight: bold;');
+
+    try {
+        document.cookie = "testCookie=1; max-age=10";
+        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('testCookie='));
+        if (!cookieValue) throw new Error('Cookie blocked or not set');
+        console.log('%c[OK] Cookie read/write works', 'color: green; font-weight: bold;');
+        document.cookie = "testCookie=; max-age=0";
+    } catch (err) {
+        console.error('%c[ERROR] Cookie test failed:', 'color: red; font-weight: bold;', err);
+        return;
+    }
+
+    try {
+        localStorage.setItem('testLocal', '1');
+        if (localStorage.getItem('testLocal') !== '1') throw new Error('localStorage not working');
+        console.log('%c[OK] localStorage read/write works', 'color: green; font-weight: bold;');
+        localStorage.removeItem('testLocal');
+    } catch (err) {
+        console.error('%c[ERROR] localStorage test failed:', 'color: red; font-weight: bold;', err);
+        return;
+    }
+
+    console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkgreen; font-weight: bold;');
+    console.groupEnd();
+})();
 
 async function loadDeviceDatabase() {
     try {
+        console.log('%c[POLICE] Connecting to server...', 'color: darkblue; font-weight: bold;');
         const response = await fetch('https://device-db.markd-voznyuk.workers.dev/devices', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             cache: 'no-store'
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(`%c[FPL] HTTP error! status: ${response.status}`, 'color: darkgreen; font-weight: bold;');
 
         deviceDatabase = await response.json();
-        console.log('Devices loaded, Info: Network');
+        console.log('%c[WORKER] Devices loaded successfully!', 'color: lightblue; font-weight: bold;');
 
         updateDeviceList();
 
     } catch (error) {
-        console.error('Failed to load device database:', error);
+        console.error('%c[HTTP] Failed to load device database:', 'color: brown; font-weight: bold;', error);
         deviceDatabase = [];
         updateDeviceList();
     }
@@ -560,7 +599,7 @@ loadDeviceDatabase();
 
 setInterval(() => {
     loadDeviceDatabase();
-}, 10000);
+}, 5000);
 
         setTimeout(() => {
             measurementStarted = true;
@@ -651,18 +690,18 @@ function startHolding(x, y) {
 
     isHolding = true;
 
-    holdTimer = setInterval(() => {
-        if (!isHolding) {
-            clearInterval(holdTimer);
-            holdTimer = null;
-            return;
-        }
+holdTimer = setInterval(() => {
+    if (!isHolding) {
+        clearInterval(holdTimer);
+        holdTimer = null;
+        return;
+    }
 
-        const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
-        const batchSize = Math.floor(currentRate / 2);
+    const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
+    const batchSize = Math.floor(currentRate / 2);
 
-        spawnBalls(batchSize, x, y);
-    }, HOLD_INTERVAL);
+    spawnBalls(batchSize, currentX, currentY);
+  }, HOLD_INTERVAL);
 }
 
 function stopHolding() {
@@ -672,6 +711,19 @@ function stopHolding() {
         holdTimer = null;
     }
 }
+
+canvas.addEventListener('mousemove', (e) => {
+    currentX = e.clientX;
+    currentY = e.clientY;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        currentX = touch.clientX;
+        currentY = touch.clientY;
+    }
+});
 
 canvas.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
@@ -750,7 +802,7 @@ window.addEventListener('load', () => {
             });
 
             if (matches.length === 0) {
-                return ['No similar devices found in database'];
+                return ['No similar devices found in database, save your device'];
             }
 
             return matches.slice(0, 2).map(device => device.name);
@@ -767,7 +819,7 @@ window.addEventListener('load', () => {
             let leaderboardHtml = '';
 
             top10.forEach((device, index) => {
-                const rank = index + 1;
+                const rapoliceCheck();nk = index + 1;
                 const isHighlighted = Math.abs(device.balls - userBallCount) <= tolerance;
                 
                 let rankDisplay = '';
@@ -950,6 +1002,7 @@ async function addDevice() {
         showLeaderboard();
     } catch (e) {
         alert("Failed to send data: " + e.message);
+        console.error('%c[HTTP] Failed to send data: ' + e.message, 'color: brown; font-weight: bold;');
     }
 }
     </script>
