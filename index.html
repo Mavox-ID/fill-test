@@ -360,6 +360,59 @@
                 font-size: 16px;
             }
         }
+.first-time-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.first-time-modal.active {
+    display: flex;
+}
+
+.first-time-content {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 40px 30px;
+    border-radius: 20px;
+    text-align: center;
+    color: #00ff88;
+    max-width: 500px;
+    animation: slideIn 0.4s ease;
+}
+
+.first-time-content h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.first-time-content p {
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
+.first-time-content button {
+    padding: 12px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #00d4ff, #00ff88);
+    color: #000;
+    font-weight: bold;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
     </style>
 </head>
 <body>
@@ -382,6 +435,14 @@
             </div>
         </div>
     </div>
+
+    <div class="first-time-modal" id="firstTimeModal">
+    <div class="first-time-content">
+        <h2>Welcome!</h2>
+        <p>To see the statistics, please <strong>hold your finger or LMB on the blue area</strong> until the results appear.</p>
+        <button id="fineButton">Fine</button>
+    </div>
+</div>
 
     <div class="hint" id="hint"></div>
 
@@ -433,6 +494,7 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const HOLD_INTERVAL = 500;
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -457,6 +519,9 @@
         let startFpsCaptured = false;
         let deviceDatabase = [];
         let userBallCount = 0;
+        let isMouseDown = false;
+        let lastSpawn = 0;
+        let lastTrigger = 0;
 
 async function loadDeviceDatabase() {
     try {
@@ -477,6 +542,10 @@ async function loadDeviceDatabase() {
 }
 
 loadDeviceDatabase();
+
+setInterval(() => {
+    loadDeviceDatabase();
+}, 10000);
 
         setTimeout(() => {
             measurementStarted = true;
@@ -555,51 +624,61 @@ loadDeviceDatabase();
             }
         }
 
-        function startHolding(x, y) {
-            if (testEnded) return;
-            isHolding = true;
-            
-            const spawnInterval = setInterval(() => {
-                if (!isHolding) {
-                    clearInterval(spawnInterval);
-                    return;
-                }
-                
-                const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
-                const batchSize = Math.floor(currentRate / 2);
-                spawnBalls(batchSize, x, y);
-            }, 500);
-            
-            holdTimer = spawnInterval;
+function startHolding(x, y) {
+    if (testEnded) return;
+
+    const now = performance.now();
+
+    if (now - lastTrigger < 80) return;
+    lastTrigger = now;
+
+    if (isHolding) return;
+
+    isHolding = true;
+
+    holdTimer = setInterval(() => {
+        if (!isHolding) {
+            clearInterval(holdTimer);
+            holdTimer = null;
+            return;
         }
 
-        function stopHolding() {
-            isHolding = false;
-            if (holdTimer) {
-                clearInterval(holdTimer);
-                holdTimer = null;
-            }
-        }
+        const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
+        const batchSize = Math.floor(currentRate / 2);
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 0) {
-                startHolding(e.clientX, e.clientY);
-            }
-        });
+        spawnBalls(batchSize, x, y);
+    }, HOLD_INTERVAL);
+}
 
-        canvas.addEventListener('mouseup', () => {
-            stopHolding();
-        });
+function stopHolding() {
+    isHolding = false;
+    if (holdTimer) {
+        clearInterval(holdTimer);
+        holdTimer = null;
+    }
+}
 
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            startHolding(touch.clientX, touch.clientY);
-        });
+canvas.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    if (isMouseDown) return;
+    isMouseDown = true;
+    startHolding(e.clientX, e.clientY);
+});
 
-        canvas.addEventListener('touchend', () => {
-            stopHolding();
-        });
+canvas.addEventListener("mouseup", () => {
+    isMouseDown = false;
+    stopHolding();
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (e.touches.length !== 1 || isHolding) return;
+    const touch = e.touches[0];
+    startHolding(touch.clientX, touch.clientY);
+});
+
+canvas.addEventListener('touchend', stopHolding);
+canvas.addEventListener('touchcancel', stopHolding);
 
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -613,6 +692,19 @@ loadDeviceDatabase();
                 clickCount = 0;
             }
         });
+
+window.addEventListener('load', () => {
+    const firstTimeModal = document.getElementById('firstTimeModal');
+    const fineButton = document.getElementById('fineButton');
+    if (!localStorage.getItem('firstTimeShown')) {
+        firstTimeModal.classList.add('active');
+    }
+
+    fineButton.addEventListener('click', () => {
+        firstTimeModal.classList.remove('active');
+        localStorage.setItem('firstTimeShown', 'true');
+    });
+});
 
         function showHint() {
             const hint = document.getElementById('hint');
