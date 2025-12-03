@@ -426,7 +426,7 @@
                 <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">--</span> FPS</div>
                 <div>↓ <span id="minFps">--</span> FPS</div>
-                <div>Created by: <strong>Sliz®</strong></div>
+                <div>Created by: <strong>Sliz®</strong> | V48.0</div>
             </div>
             <div class="ball-count">
                 <div class="ball-item">
@@ -442,7 +442,7 @@
         <h2>Welcome!</h2>
         <p>To see the statistics, please <strong>hold your finger or LMB on the blue area</strong> until the results appear.</p>
         <p>Created by: <strong>Sliz®</strong> We are not responsible for your device. <strong>(But the test is safe.)</strong></p>
-        <p>Latest version of the project: <strong>47.9</strong></p>
+        <p>Latest version of the project: <strong>48.0</strong></p>
         <button id="fineButton">Fine</button>
     </div>
 </div>
@@ -572,7 +572,7 @@
     }
 
     console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkgreen; font-weight: bold;');
-    console.log('%c[POLICE] Version of code: 47.9', 'color: darkblue; font-weight: bold;');
+    console.log('%c[POLICE] Version of code: 48.0', 'color: darkblue; font-weight: bold;');
     console.groupEnd();
 })();
 
@@ -920,6 +920,11 @@ function showAllSimilarDevices() {
 
 function hideSimilarDevices() {
     document.getElementById('similarDevicesModal').style.display = 'none';
+
+    document.getElementById('allDevicesView').style.display = 'none';
+    document.getElementById('leaderboardView').classList.remove('active');
+
+    document.getElementById('statsView').classList.remove('hidden');
 }
 
         function animate() {
