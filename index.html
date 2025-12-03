@@ -492,6 +492,16 @@
     <button class="btn-devices" onclick="showAllSimilarDevices()">View all similar devices</button>
 </div>
 </div>
+
+<div class="modal" id="similarDevicesModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-title">Similar Devices</div>
+        <div id="similarDevicesList" style="max-height:60vh; overflow-y:auto;"></div>
+        <div class="button-container">
+            <button class="btn-back" onclick="hideSimilarDevices()">Back</button>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 
@@ -680,50 +690,39 @@ setInterval(() => {
             }
         }
 
-function startHolding(x, y) {
+function startHolding(isMouse = false) {
     if (testEnded) return;
 
     const now = performance.now();
-
     if (now - lastTrigger < 80) return;
     lastTrigger = now;
 
     if (isHolding) return;
-
     isHolding = true;
 
-holdTimer = setInterval(() => {
-    if (!isHolding) {
-        clearInterval(holdTimer);
-        holdTimer = null;
-        return;
-    }
+    holdTimer = setInterval(() => {
+        if (!isHolding) {
+            clearInterval(holdTimer);
+            holdTimer = null;
+            return;
+        }
 
-    const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
-    const batchSize = Math.floor(currentRate / 2);
+        const currentRate = spawnRate + Math.floor(totalSpawned / 1000) * 100;
+        const batchSize = Math.floor(currentRate / 2);
 
-    spawnBalls(batchSize, currentX, currentY);
-  }, HOLD_INTERVAL);
+        const spawnX = isMouse ? currentX : lastSpawnX;
+        const spawnY = isMouse ? currentY : lastSpawnY;
+
+        spawnBalls(batchSize, spawnX, spawnY);
+
+    }, HOLD_INTERVAL);
 }
-
-function stopHolding() {
-    isHolding = false;
-    if (holdTimer) {
-        clearInterval(holdTimer);
-        holdTimer = null;
-    }
-}
-
-canvas.addEventListener('mousemove', (e) => {
-    currentX = e.clientX;
-    currentY = e.clientY;
-});
 
 canvas.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
     if (isMouseDown) return;
     isMouseDown = true;
-    startHolding(e.clientX, e.clientY);
+    startHolding(true);
 });
 
 canvas.addEventListener("mouseup", () => {
@@ -733,13 +732,28 @@ canvas.addEventListener("mouseup", () => {
 
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    if (e.touches.length !== 1 || isHolding) return;
+    if (e.touches.length !== 1) return;
     const touch = e.touches[0];
-    startHolding(touch.clientX, touch.clientY);
+    lastSpawnX = touch.clientX;
+    lastSpawnY = touch.clientY;
+    startHolding(false);
 });
 
 canvas.addEventListener('touchend', stopHolding);
 canvas.addEventListener('touchcancel', stopHolding);
+
+canvas.addEventListener('mousemove', (e) => {
+    currentX = e.clientX;
+    currentY = e.clientY;
+});
+
+function stopHolding() {
+    isHolding = false;
+    if (holdTimer) {
+        clearInterval(holdTimer);
+        holdTimer = null;
+    }
+}
 
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -874,28 +888,20 @@ function hideAllDevices() {
 }
 
 function showAllSimilarDevices() {
-    document.getElementById('leaderboardView').classList.remove('active');
-    document.getElementById('allDevicesView').style.display = 'block';
-
-    if (!userBallCount) return;
+    if (!userBallCount || deviceDatabase.length === 0) return;
 
     const tolerance = userBallCount * 0.1;
     const similarDevices = deviceDatabase
         .filter(d => Math.abs(d.balls - userBallCount) <= tolerance)
-        .sort((a, b) => Math.abs(a.balls - userBallCount) - Math.abs(b.balls - userBallCount));
+        .sort((a,b)=>Math.abs(a.balls - userBallCount) - Math.abs(b.balls - userBallCount));
 
     let html = '';
-    similarDevices.forEach((device, index) => {
+    similarDevices.forEach((device, index)=>{
         let rankDisplay = '';
-        if (index === 0) {
-            rankDisplay = '<div class="medal gold">1</div>';
-        } else if (index === 1) {
-            rankDisplay = '<div class="medal silver">2</div>';
-        } else if (index === 2) {
-            rankDisplay = '<div class="medal bronze">3</div>';
-        } else {
-            rankDisplay = `<div class="leaderboard-rank">${index + 1}</div>`;
-        }
+        if(index===0) rankDisplay = '<div class="medal gold">1</div>';
+        else if(index===1) rankDisplay = '<div class="medal silver">2</div>';
+        else if(index===2) rankDisplay = '<div class="medal bronze">3</div>';
+        else rankDisplay = `<div class="leaderboard-rank">${index+1}</div>`;
 
         html += `
             <div class="leaderboard-item">
@@ -908,7 +914,12 @@ function showAllSimilarDevices() {
         `;
     });
 
-    document.getElementById('allDevicesList').innerHTML = html;
+    document.getElementById('similarDevicesList').innerHTML = html;
+    document.getElementById('similarDevicesModal').style.display = 'flex';
+}
+
+function hideSimilarDevices() {
+    document.getElementById('similarDevicesModal').style.display = 'none';
 }
 
         function animate() {
