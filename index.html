@@ -401,8 +401,7 @@
                     <div id="deviceList">Analyzing...</div>
                 </div>
                 <div class="button-container">
-                    <button class="btn-repeat" onclick="repeatTest()">Repeat Test</button>
-                    <button class="btn-reset" onclick="resetAndRepeat()">Reset and Repeat</button>
+                    <button class="btn-reset" onclick="resetAndRepeat()">Repeat Test</button>
                     <button class="btn-devices" onclick="showLeaderboard()">Devices</button>
                     <button class="btn-devices" onclick="addDevice()">Add my device</button>
                 </div>
@@ -411,10 +410,23 @@
             <div class="leaderboard-view" id="leaderboardView">
                 <div class="modal-title">Top 10 Devices</div>
                 <div id="leaderboardList"></div>
-                <div class="button-container">
-                    <button class="btn-back" onclick="hideLeaderboard()">Back to Stats</button>
-                </div>
+<div class="button-container">
+    <button class="btn-back" onclick="hideLeaderboard()">Back to Stats</button>
+    <button class="btn-devices" onclick="showAllDevices()">View all devices</button>
+</div>
             </div>
+
+            <div class="leaderboard-view" id="allDevicesView" style="display:none;">
+    <div class="modal-title">All Devices</div>
+    <div id="allDevicesList" style="
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 10px;
+    "></div>
+    <div class="button-container">
+        <button class="btn-back" onclick="hideAllDevices()">Back</button>
+    </div>
+</div>
         </div>
     </div>
 
@@ -681,6 +693,33 @@ loadDeviceDatabase();
             document.getElementById('leaderboardView').classList.remove('active');
         }
 
+        function showAllDevices() {
+    document.getElementById('leaderboardView').classList.remove('active');
+    document.getElementById('allDevicesView').style.display = 'block';
+
+    const sortedDevices = [...deviceDatabase].sort((a, b) => b.balls - a.balls);
+
+    let html = '';
+    sortedDevices.forEach((device, index) => {
+        html += `
+            <div class="leaderboard-item">
+                <div class="leaderboard-left">
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-name">${device.name}</div>
+                </div>
+                <div class="leaderboard-balls">${device.balls} objects</div>
+            </div>
+        `;
+    });
+
+    document.getElementById('allDevicesList').innerHTML = html;
+}
+
+function hideAllDevices() {
+    document.getElementById('allDevicesView').style.display = 'none';
+    document.getElementById('leaderboardView').classList.add('active');
+}
+
         function animate() {
             if (testEnded) return;
 
@@ -751,22 +790,6 @@ loadDeviceDatabase();
             document.getElementById('deviceList').innerHTML = deviceListHtml;
             
             document.getElementById('modal').classList.add('active');
-        }
-
-        function repeatTest() {
-            document.getElementById('modal').classList.remove('active');
-            document.getElementById('statsView').classList.remove('hidden');
-            document.getElementById('leaderboardView').classList.remove('active');
-            balls = [];
-            testEnded = false;
-            totalSpawned = 0;
-            clickCount = 0;
-            lowFpsStartTime = null;
-            updateBallCount();
-            lastTime = performance.now();
-            lastFpsUpdate = performance.now();
-            fpsBuffer = [];
-            animate();
         }
 
         function resetAndRepeat() {
