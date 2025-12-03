@@ -429,7 +429,7 @@
                 <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">--</span> FPS</div>
                 <div>↓ <span id="minFps">--</span> FPS</div>
-                <div>Created by: <strong>Sliz®</strong> | V48.1</div>
+                <div>Created by: <strong>Sliz®</strong> | V48.2</div>
             </div>
             <div class="ball-count">
                 <div class="ball-item">
@@ -445,7 +445,7 @@
         <h2>Welcome!</h2>
         <p>To see the statistics, please <strong>hold your finger or LMB on the blue area</strong> until the results appear.</p>
         <p>Created by: <strong>Sliz®</strong> We are not responsible for your device. <strong>(But the test is safe.)</strong></p>
-        <p>Latest version of the project: <strong>48.1</strong></p>
+        <p>Latest version of the project: <strong>48.2</strong></p>
         <button id="fineButton">Fine</button>
     </div>
 </div>
@@ -576,7 +576,7 @@
     }
 
     console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkgreen; font-weight: bold;');
-    console.log('%c[POLICE] Version of code: 48.1', 'color: darkblue; font-weight: bold;');
+    console.log('%c[POLICE] Version of code: 48.2', 'color: darkblue; font-weight: bold;');
     console.groupEnd();
 })();
 
@@ -861,10 +861,11 @@ window.addEventListener('load', () => {
             document.getElementById('leaderboardList').innerHTML = leaderboardHtml;
         }
 
-        function hideLeaderboard() {
-            document.getElementById('statsView').classList.remove('hidden');
-            document.getElementById('leaderboardView').classList.remove('active');
-        }
+function hideLeaderboard() {
+    document.getElementById('statsView').classList.remove('hidden');
+    document.getElementById('leaderboardView').classList.remove('active');
+    document.getElementById('allDevicesView').style.display = 'none';
+}
 
         function showAllDevices() {
     previousScreen = 'leaderboard';
@@ -991,7 +992,7 @@ function hideSimilarDevices() {
                 ball.draw();
             });
 
-            requestAnimationFrame(animate);
+            setTimeout(animate, 0);
         }
 
         function endTest() {
