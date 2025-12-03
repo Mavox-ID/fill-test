@@ -819,7 +819,7 @@ window.addEventListener('load', () => {
             let leaderboardHtml = '';
 
             top10.forEach((device, index) => {
-                const rapoliceCheck();nk = index + 1;
+                const rank = index + 1;
                 const isHighlighted = Math.abs(device.balls - userBallCount) <= tolerance;
                 
                 let rankDisplay = '';
