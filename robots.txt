@@ -1,0 +1,59 @@
+# ===============================================================
+# Robots.txt for fpl.pp.ua
+# ===============================================================
+# Author: Sliz
+# Created: 2025-12-4
+# Information: Robots.txt file for fpl.pp.ua
+# ===============================================================
+
+# -----------------------------
+# General rule for all bots
+# -----------------------------
+User-agent: *
+Allow: /
+
+# -----------------------------
+# Sitemap and Host
+# -----------------------------
+Sitemap: https://fpl.pp.ua/sitemap.xml
+Host: fpl.pp.ua
+
+# -----------------------------
+# Rules for Googlebot
+# -----------------------------
+User-agent: Googlebot
+Allow: /
+
+# -----------------------------
+# Rules for Bingbot
+# -----------------------------
+User-agent: Bingbot
+Allow: /
+
+# -----------------------------
+# Rules for Yandex
+# -----------------------------
+User-agent: Yandex
+Allow: /
+Host: fhai.pp.ua
+
+# -----------------------------
+# Rules for Slurp (Yahoo)
+# -----------------------------
+User-agent: Slurp
+Allow: /
+
+# -------------------------
+# BKBB - Safe site system
+# -------------------------
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
