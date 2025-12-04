@@ -455,7 +455,7 @@
                 <div>Start: <span id="startFps">--</span> FPS</div>
                 <div>↑ <span id="maxFps">--</span> FPS</div>
                 <div>↓ <span id="minFps">--</span> FPS</div>
-                <div>Created by: <strong>Sliz®</strong> | V48.3</div>
+                <div>Created by: <strong>Sliz®</strong> | V48.4</div>
             </div>
             <div class="ball-count">
                 <div class="ball-item">
@@ -471,7 +471,7 @@
         <h2>Welcome!</h2>
         <p>To see the statistics, please <strong>hold your finger or LMB on the blue area</strong> until the results appear.</p>
         <p>Created by: <strong>Sliz®</strong> We are not responsible for your device. <strong>(But the test is safe.)</strong></p>
-        <p>Latest version of the project: <strong>48.3</strong></p>
+        <p>Latest version of the project: <strong>48.4</strong></p>
         <button id="fineButton">Fine</button>
     </div>
 </div>
@@ -572,10 +572,10 @@
         console.log('%c[FPL] Attention! You are in the DevTools console; this is for developers only. If you are a beta tester or have found a bug, you can view the logs and request help on the official Github page.', 'color: darkgreen; font-weight: bold;');
 
 (async function policeCheck() {
-    console.group('%c[POLICE] Running system checks', 'color: darkblue; font-weight: bold;');
+    console.group('%c[POLICE] Running system checks...', 'color: darkblue; font-weight: bold;');
 
     if (location.protocol !== 'https:') {
-        console.error('%c[ERROR] Connection is not HTTPS!', 'color: red; font-weight: bold;');
+        console.error('%c[ERROR] Connection is HTTP', 'color: red; font-weight: bold;');
         return;
     } 
     console.log('%c[OK] HTTPS verified', 'color: green; font-weight: bold;');
@@ -601,24 +601,30 @@
         return;
     }
 
-    console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkgreen; font-weight: bold;');
-    console.log('%c[POLICE] Version of code: 48.3', 'color: darkblue; font-weight: bold;');
+    console.log('%c[POLICE] All checks passed, main script can start.', 'color: darkblue; font-weight: bold;');
+    console.log('%c---', 'color: darkgreen; font-weight: bold;');
+    console.log('%c[POLICE] Version of code: 48.4', 'color: darkblue; font-weight: bold;');
     console.groupEnd();
 })();
 
 async function loadDeviceDatabase() {
     try {
-        console.log('%c[POLICE] Connecting to server...', 'color: darkblue; font-weight: bold;');
+        console.log('%c[FPL] Connecting to server...', 'color: #50c878; font-weight: bold;');
         const response = await fetch('https://device-db.markd-voznyuk.workers.dev/devices', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             cache: 'no-store'
         });
 
-        if (!response.ok) throw new Error(`%c[FPL] HTTP error! status: ${response.status}`, 'color: darkgreen; font-weight: bold;');
+        if (!response.ok) throw new Error(`%c[FPL] HTTP error! status: ${response.status}`, 'color: brown; font-weight: bold;');
 
         deviceDatabase = await response.json();
-        console.log('%c[WORKER] Devices loaded successfully!', 'color: lightblue; font-weight: bold;');
+    console.log(
+    '%c[WORKER] Connection with %cfpl.pp.ua%c successful.',
+    'color: #50c878; font-weight: bold;',
+    'color: #00c8ff; font-weight: bold;',
+    'color: #50c878; font-weight: bold;'
+);
 
         updateDeviceList();
 
